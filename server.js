@@ -7,10 +7,10 @@ app.use(express.json());
 
 // قاعدة بيانات وهمية لإيضاح الثغرة
 const db = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    password: "password",
-    database: "users_db"
+    host: process.env.DB_HOST || "localhost",
+    user: process.env.DB_USER || "root",
+    password: process.env.DB_PASSWORD || "password",
+    database: process.env.DB_DATABASE || "users_db"
 });
 
 // 1. ثغرة حقن SQL خطيرة (SQL Injection)
