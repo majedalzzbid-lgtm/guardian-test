@@ -1,6 +1,7 @@
 const express = require('express');
 const mysql = require('mysql');
 const crypto = require('crypto');
+const bcrypt = require('bcrypt'); // Import bcrypt for secure password hashing
 const app = express();
 
 app.use(express.json());
@@ -20,15 +21,22 @@ app.post('/login', (req, res) => {
     const password = req.body.password;
     
     // استخدام استعلامات مُعدَّة (Prepared Statements) لمنع حقن SQL
-    let query = "SELECT * FROM users WHERE username = ? AND password = ?";
+    let query = "SELECT * FROM users WHERE username = ?";
     
-    db.query(query, [username, password], (err, result) => {
+    db.query(query, [username], (err, result) => {
         if (err) {
             console.error("Login query error:", err);
             return res.status(500).send("Internal Server Error");
         }
         if (result.length > 0) {
-            res.send("Login successful");
+            // Compare provided password with hashed password from DB
+            bcrypt.compare(password, result[0].password, (err, bcryptResult) => {
+                if (bcryptResult) {
+                    res.send("Login successful");
+                } else {
+                    res.status(401).send("Invalid credentials");
+                }
+            });
         } else {
             res.status(401).send("Invalid credentials");
         }
@@ -40,10 +48,15 @@ app.post('/login', (req, res) => {
 app.post('/register', (req, res) => {
     const password = req.body.password;
     
-    // MD5 يعتبر ثغرة أمنية ويسهل كسر تشفيره
-    const hashedPassword = crypto.createHash('md5').update(password).digest('hex');
-    
-    res.json({ status: "success", hash: hashedPassword });
+    // Use bcrypt for secure password hashing
+    bcrypt.hash(password, 10, (err, hashedPassword) => {
+        if (err) {
+            console.error("Bcrypt hashing error:", err);
+            return res.status(500).send("Error hashing password");
+        }
+        // In a real application, you would store `hashedPassword` in the database
+        res.json({ status: "success", hash: hashedPassword });
+    });
 });
 
 // 3. ثغرة تسريب معلومات حساسة وعدم فحص الصلاحيات (BOLA / IDOR)
