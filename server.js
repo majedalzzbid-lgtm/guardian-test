@@ -19,11 +19,19 @@ app.post('/login', (req, res) => {
     const username = req.body.username;
     const password = req.body.password;
     
-    let query = "SELECT * FROM users WHERE username = '" + username + "' AND password = '" + password + "'";
+    // استخدام استعلامات مُعدَّة (Prepared Statements) لمنع حقن SQL
+    let query = "SELECT * FROM users WHERE username = ? AND password = ?";
     
-    db.query(query, (err, result) => {
-        if (err) throw err;
-        res.send(result);
+    db.query(query, [username, password], (err, result) => {
+        if (err) {
+            console.error("Login query error:", err);
+            return res.status(500).send("Internal Server Error");
+        }
+        if (result.length > 0) {
+            res.send("Login successful");
+        } else {
+            res.status(401).send("Invalid credentials");
+        }
     });
 });
 
