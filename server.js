@@ -54,10 +54,11 @@ app.get('/api/user/:id', (req, res) => {
     
     // الكود يجلب كل البيانات بما فيها كلمة المرور ويسلمها للواجهة مباشرة
     // FIX: استخدام استعلامات مُعدَّة (Prepared Statements) لمنع حقن SQL
-    let query = `SELECT id, username, email, password, credit_card FROM users WHERE id = ?`;
+    let query = `SELECT id, username, email FROM users WHERE id = ?`;
     
     db.query(query, [userId], (err, result) => {
         if (err) return res.status(500).send(err);
+        if (result.length === 0) return res.status(404).send("User not found");
         res.json(result[0]); 
     });
 });
